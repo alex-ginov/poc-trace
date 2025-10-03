@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+# Détecte si l'application est une application Tempo.
+# Cela peut être basé sur la présence d'un fichier tempo.yaml ou d'une variable d'environnement.
+
+if [ -f "${1}/tempo.yaml" ] || [ -n "$TEMPO_CONFIG_YAML" ]; then
+  echo "Tempo"
+  exit 0
+else
+  exit 1
+fi
+

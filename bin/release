@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+cat <<EOF
+--- 
+processes:
+  web: /app/boot.sh
+EOF
+

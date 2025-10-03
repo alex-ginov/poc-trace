@@ -1,0 +1,79 @@
+#!/bin/bash
+
+set -e
+
+BUILD_DIR=${1:-}
+CACHE_DIR=${2:-}
+ENV_DIR=${3:-}
+basedir="$( cd -P "$( dirname "$0" )" && pwd )"
+BUILDPACK_DIR="$(readlink -f ${basedir}/..)"
+source ${BUILDPACK_DIR}/lib/common.sh
+
+if [ -n "$BUILDPACK_DEBUG" ]; then
+  set -x
+fi
+
+TEMPO_VERSION="${TEMPO_VERSION:-"2.4.0"}" # Version par défaut de Tempo
+
+install_tempo() {
+  local BUILD_DIR="${1}"
+  local CACHE_DIR="${2}"
+
+  tempo_dist="tempo-linux-amd64"
+  tempo_archive="tempo-${TEMPO_VERSION}.linux-amd64.tar.gz"
+  tempo_url="https://github.com/grafana/tempo/releases/download/v${TEMPO_VERSION}"
+
+  if [[ -f "$CACHE_DIR/.TEMPO_VERSION" ]]; then
+    old_version=$(cat $CACHE_DIR/.TEMPO_VERSION)
+    if [[ $old_version != $TEMPO_VERSION ]]; then
+      echo "Nouvelle version de Tempo, nettoyage du cache pour l'ancienne version"
+      rm -f $CACHE_DIR/$old_version.tar.gz ${CACHE_DIR}/${tempo_archive}*
+    fi
+  fi
+
+  if [[ ! -f "$CACHE_DIR/${tempo_archive}" ]]; then
+    echo -n "Téléchargement de l'archive Tempo ${TEMPO_VERSION}..."
+    curl --silent --fail --location --retry 3 --retry-delay 2 --connect-timeout 3 --max-time 30 --output ${CACHE_DIR}/${tempo_archive} "${tempo_url}/${tempo_archive}"
+    echo " fait"
+    echo $TEMPO_VERSION > ${CACHE_DIR}/.TEMPO_VERSION
+  else
+    echo "Récupération de l'archive Tempo ${TEMPO_VERSION} depuis le cache"
+  fi
+
+  echo -n "Extraction de l'archive Tempo..."
+  tar xzf ${CACHE_DIR}/${tempo_archive} --directory=$BUILD_DIR
+  mv ${BUILD_DIR}/${tempo_dist} ${BUILD_DIR}/tempo
+  echo " fait"
+
+  echo -n "Copie des scripts du buildpack..."
+  cp ${BUILDPACK_DIR}/opt/boot.sh ${BUILD_DIR}
+  cp ${BUILDPACK_DIR}/opt/gen_tempo_conf.rb ${BUILD_DIR}
+  cp ${BUILDPACK_DIR}/opt/tempo.yaml.erb ${BUILD_DIR}
+  echo " fait"
+}
+
+mkdir -p $CACHE_DIR
+export_env_dir "$ENV_DIR"
+
+install_tempo ${BUILD_DIR} ${CACHE_DIR}
+
+# --- Logique de configuration de Tempo ---
+
+mkdir -p ${BUILD_DIR}/tempo/etc
+
+export BUILDPACK_DIR # Exporter pour le script Ruby
+
+if [ -f "${BUILD_DIR}/app/tempo.yaml" ]; then
+  echo "Utilisation de app/tempo.yaml fourni par l'utilisateur."
+  cp "${BUILD_DIR}/app/tempo.yaml" "${BUILD_DIR}/tempo/etc/tempo.yaml"
+elif [ -n "$TEMPO_CONFIG_YAML" ]; then
+  echo "Utilisation de TEMPO_CONFIG_YAML pour la configuration de Tempo."
+  echo "$TEMPO_CONFIG_YAML" > "${BUILD_DIR}/tempo/etc/tempo.yaml"
+else
+  echo "Génération de tempo.yaml à partir du template et des variables d'environnement."
+  ruby ${BUILD_DIR}/gen_tempo_conf.rb > "${BUILD_DIR}/tempo/etc/tempo.yaml"
+fi
+
+# Nettoyage des fichiers temporaires ou non nécessaires
+rm -f ${BUILD_DIR}/gen_tempo_conf.rb ${BUILD_DIR}/tempo.yaml.erb
+

@@ -1,0 +1,50 @@
+---
+server:
+  # http_listen_port et grpc_listen_port sont maintenant gérés par boot.sh et/ou les variables d'environnement Scalingo.
+  # Ne pas les spécifier ici pour éviter les conflits.
+
+# Configuration du distributeur
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+        http:
+
+# Configuration de l'ingester
+ingester:
+  trace_fanout_size_bytes: 1048576 # 1MB
+  max_block_bytes: 104857600 # 100MB
+  max_block_duration: 1h
+  flush_period: 5m
+  block_retention: 1h
+
+# Configuration du compacteur
+compactor:
+  compaction:
+    compaction_interval: 5m
+    max_block_bytes: 1073741824 # 1GB
+
+# Configuration du stockage
+storage:
+  trace_by_id:
+    backend: <%= storage_config["trace_by_id"]["backend"] %>
+  wal:
+    path: <%= storage_config["wal"]["path"] %>
+  s3:
+    bucket: <%= storage_config["s3"]["bucket"] %>
+    endpoint: <%= storage_config["s3"]["endpoint"] %>
+    access_key_id: <%= ENV["TEMPO_STORAGE_S3_ACCESS_KEY_ID"] %>
+    secret_access_key: <%= ENV["TEMPO_STORAGE_S3_SECRET_ACCESS_KEY"] %>
+    insecure: <%= ENV["TEMPO_STORAGE_S3_INSECURE"] == "true" %>
+
+# Configuration des limites (optionnel)
+# overrides:
+#   per_tenant_override_config: /etc/tempo/overrides.yaml
+
+# Configuration des métriques (optionnel)
+# metrics_generator:
+#   registry: 
+#     external_labels:
+#       cluster: "<%= ENV["CLUSTER_NAME"] %>"
+
