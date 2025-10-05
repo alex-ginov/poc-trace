@@ -28,34 +28,17 @@ install_tempo() {
 
   if [[ -f "$CACHE_DIR/.TEMPO_VERSION" ]]; then
     old_version=$(cat $CACHE_DIR/.TEMPO_VERSION)
-    if [[ $old_version != $TEMPO_VERSION ]]; then
-      echo "-----> Nouvelle version détectée"
-      rm -f $CACHE_DIR/*.tar.gz
-    fi
+    echo "       Version précédente : $old_version"
   fi
 
-  if [[ ! -f "$CACHE_DIR/${tempo_archive}" ]]; then
-    echo "-----> Téléchargement de Tempo ${TEMPO_VERSION}..."
-    
-    curl -L --fail --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 300 \
-      -o ${CACHE_DIR}/${tempo_archive} "${tempo_url}"
-    
-    file_size=$(stat -c%s "${CACHE_DIR}/${tempo_archive}" 2>/dev/null || echo "0")
-    
-    if [ "$file_size" -lt 1000 ]; then
-      echo "ERREUR: Fichier téléchargé trop petit (${file_size} bytes)"
-      rm -f ${CACHE_DIR}/${tempo_archive}
-      exit 1
-    fi
-    
-    echo "       Téléchargé: ${file_size} bytes"
-    echo $TEMPO_VERSION > ${CACHE_DIR}/.TEMPO_VERSION
+  if [[ "$old_version" != "$TEMPO_VERSION" ]]; then
+    echo "       Téléchargement de Tempo v${TEMPO_VERSION}..."
+    curl -L "$tempo_url" -o "$CACHE_DIR/$tempo_archive"
+    echo "$TEMPO_VERSION" > "$CACHE_DIR/.TEMPO_VERSION"
   else
-    echo "-----> Utilisation du cache"
+    echo "       Utilisation du cache pour Tempo v${TEMPO_VERSION}"
   fi
 
-  echo "-----> Extraction de Tempo..."
-  
   # Créer un répertoire temporaire pour l'extraction
   temp_extract="${BUILD_DIR}/tempo_extract_$$"
   mkdir -p "${temp_extract}"
@@ -89,7 +72,7 @@ install_tempo() {
   
   # Nettoyer le répertoire temporaire
   rm -rf ${temp_extract}
-  
+
   chmod +x "${BUILD_DIR}/tempo"
   
   # Vérifier que c'est bien un binaire

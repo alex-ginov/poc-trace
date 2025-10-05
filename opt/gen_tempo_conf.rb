@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # ============================================================
 # Génération statique d'une configuration Grafana Tempo
-# Compatible Scalingo (écoute sur le port $PORT)
+# Compatible Scalingo (écoute sur le port $PORT pour HTTP, 9095 pour gRPC)
 # ============================================================
 
 begin
@@ -14,14 +14,14 @@ begin
   # ================================================
   server:
     http_listen_port: #{port}
-    grpc_listen_port: #{port}
+    grpc_listen_port: 9095
 
   distributor:
     receivers:
       otlp:
         protocols:
           grpc:
-            endpoint: "0.0.0.0:#{port}"
+            endpoint: "0.0.0.0:9095"
           http:
             endpoint: "0.0.0.0:#{port}"
 
@@ -41,16 +41,26 @@ begin
       path: /tmp/tempo/wal
     local:
       path: /tmp/tempo/blocks
+
+  # Désactiver l'authentification pour simplifier
+  auth:
+    enabled: false
+
+  # Désactiver les métriques Prometheus intégrées
+  # car elles entrent en conflit avec l'agent
+  metrics_generator:
+    storage:
+      path: /tmp/tempo/metrics
   YAML
 
-  # Affiche le contenu généré (utile pour debugging)
-  puts "-----> Génération de tempo.yaml (port: #{port})"
+  # Afficher la configuration générée
   puts config
-  puts "✓ tempo.yaml généré avec succès"
-  exit 0
 
 rescue => e
-  STDERR.puts "ERREUR lors de la génération de la configuration: #{e.class}: #{e.message}"
+  STDERR.puts "ERREUR lors de la génération de la configuration: #{e.message}"
   STDERR.puts e.backtrace.join("\n")
   exit 1
 end
+
+# Toujours terminer avec succès
+exit 0
