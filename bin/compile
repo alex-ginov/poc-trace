@@ -66,16 +66,16 @@ install_tempo() {
   echo "       Fichiers extraits:"
   ls -la ${temp_extract}
   
-  # Créer le répertoire final pour Tempo
-  mkdir -p "${BUILD_DIR}/tempo_app"
+  # Créer le répertoire final pour Tempo (à la racine de l'application)
+  mkdir -p "${BUILD_DIR}"
   
   # Chercher et déplacer l'exécutable tempo
   if [ -f "${temp_extract}/tempo" ]; then
     echo "       ✓ Exécutable 'tempo' trouvé"
-    mv "${temp_extract}/tempo" "${BUILD_DIR}/tempo_app/tempo"
+    mv "${temp_extract}/tempo" "${BUILD_DIR}/tempo"
   elif [ -f "${temp_extract}/tempo-linux-amd64" ]; then
     echo "       ✓ Exécutable 'tempo-linux-amd64' trouvé"
-    mv "${temp_extract}/tempo-linux-amd64" "${BUILD_DIR}/tempo_app/tempo"
+    mv "${temp_extract}/tempo-linux-amd64" "${BUILD_DIR}/tempo"
   else
     echo "ERREUR: Exécutable tempo non trouvé"
     echo "Contenu du répertoire d'extraction:"
@@ -84,20 +84,20 @@ install_tempo() {
   fi
   
   # Copier aussi tempo-query et tempo-cli s'ils existent
-  [ -f "${temp_extract}/tempo-query" ] && mv "${temp_extract}/tempo-query" "${BUILD_DIR}/tempo_app/"
-  [ -f "${temp_extract}/tempo-cli" ] && mv "${temp_extract}/tempo-cli" "${BUILD_DIR}/tempo_app/"
+  [ -f "${temp_extract}/tempo-query" ] && mv "${temp_extract}/tempo-query" "${BUILD_DIR}/"
+  [ -f "${temp_extract}/tempo-cli" ] && mv "${temp_extract}/tempo-cli" "${BUILD_DIR}/"
   
   # Nettoyer le répertoire temporaire
   rm -rf ${temp_extract}
   
-  chmod +x "${BUILD_DIR}/tempo_app/tempo"
+  chmod +x "${BUILD_DIR}/tempo"
   
   # Vérifier que c'est bien un binaire
-  if file "${BUILD_DIR}/tempo_app/tempo" | grep -q "ELF"; then
+  if file "${BUILD_DIR}/tempo" | grep -q "ELF"; then
     echo "       ✓ Binaire ELF valide"
   else
     echo "ERREUR: Le fichier n'est pas un binaire valide"
-    file "${BUILD_DIR}/tempo_app/tempo"
+    file "${BUILD_DIR}/tempo"
     exit 1
   fi
   
