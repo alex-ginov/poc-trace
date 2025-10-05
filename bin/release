@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Configuration minimale pour le buildpack
-echo "---"
-echo "default_process_types:"
-echo "  web: /app/boot.sh"
+cat << 'EOF'
+---
+default_process_types:
+  web: /app/boot.sh
+EOF
