@@ -104,10 +104,27 @@ begin
   
   # Générer la configuration
   debug("Génération de la configuration...")
-  config_yaml = erb_template.result(binding)
+  debug("Binding: #{binding.local_variables.inspect}")
+  debug("storage_config: #{storage_config.inspect}")
+  debug("server_config: #{server_config.inspect}")
+  
+  # Dumper le contenu du binding pour le débogage
+  binding.local_variables.each do |var|
+    debug("Variable: #{var} = #{binding.local_variable_get(var).inspect}")
+  end
+  
+  begin
+    config_yaml = erb_template.result(binding)
+    debug("Configuration YAML générée avec succès")
+  rescue => e
+    debug("ERREUR lors de la génération du template: #{e.class}: #{e.message}")
+    debug("Backtrace: #{e.backtrace.join("\n")}")
+    raise
+  end
   
   # Valider le YAML généré
   begin
+    debug("Validation du YAML généré...")
     YAML.safe_load(config_yaml)
     debug("Configuration YAML valide")
   rescue Psych::SyntaxError => e
