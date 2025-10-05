@@ -3,19 +3,19 @@
 # ================================================
 
 server:
-  # Scalingo ne permet d'exposer qu'un seul port externe : $PORT
+  # Scalingo n'expose qu'un seul port externe : $PORT pour HTTP
   http_listen_port: <%= ENV["PORT"] || 8080 %>
-  grpc_listen_port: <%= ENV["PORT"] || 8080 %>
+  grpc_listen_port: 9095
 
 distributor:
   receivers:
     otlp:
       protocols:
         grpc:
-          # OTLP gRPC sur le port exposé
-          endpoint: "0.0.0.0:<%= ENV["PORT"] || 8080 %>"
+          # OTLP gRPC sur le port 9095
+          endpoint: "0.0.0.0:9095"
         http:
-          # OTLP HTTP sur le même port (utilisé par Node.js)
+          # OTLP HTTP sur le port exposé (utilisé par Node.js)
           endpoint: "0.0.0.0:<%= ENV["PORT"] || 8080 %>"
 
 ingester:
@@ -34,3 +34,13 @@ storage:
     path: /tmp/tempo/wal
   local:
     path: /tmp/tempo/blocks
+
+# Désactiver l'authentification pour simplifier
+auth:
+  enabled: false
+
+# Désactiver les métriques Prometheus intégrées
+# car elles entrent en conflit avec l'agent
+metrics_generator:
+  storage:
+    path: /tmp/tempo/metrics
