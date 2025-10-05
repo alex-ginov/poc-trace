@@ -27,22 +27,35 @@ compactor:
 
 # Configuration du stockage
 storage:
+  # Configuration du backend de stockage des traces
   trace:
-    backend: <%= storage_config["trace"]["backend"] %>
+    backend: <%= storage_config.dig("trace", "backend") || 'local' %>
+  
+  # Configuration du Write-Ahead Log
   wal:
-    path: <%= storage_config["wal"]["path"] %>
-<% if storage_config["local"] %>
+    path: <%= storage_config.dig("wal", "path") || '/tmp/tempo/wal' %>
+  
+  # Configuration du stockage local (si activé)
+  <% if storage_config["local"] && storage_config["local"].is_a?(Hash) %>
   local:
-    path: <%= storage_config["local"]["path"] %>
-<% end %>
-<% if storage_config["s3"] %>
+    path: <%= storage_config["local"]["path"] || '/tmp/tempo/blocks' %>
+  <% end %>
+  
+  # Configuration du stockage S3 (si activé)
+  <% if storage_config["s3"] && storage_config["s3"].is_a?(Hash) %>
   s3:
-    bucket: <%= storage_config["s3"]["bucket"] %>
+    bucket: <%= storage_config.dig("s3", "bucket") %>
+    <% if storage_config.dig("s3", "endpoint") %>
     endpoint: <%= storage_config["s3"]["endpoint"] %>
+    <% end %>
+    <% if ENV["TEMPO_STORAGE_S3_ACCESS_KEY_ID"] %>
     access_key_id: <%= ENV["TEMPO_STORAGE_S3_ACCESS_KEY_ID"] %>
+    <% end %>
+    <% if ENV["TEMPO_STORAGE_S3_SECRET_ACCESS_KEY"] %>
     secret_access_key: <%= ENV["TEMPO_STORAGE_S3_SECRET_ACCESS_KEY"] %>
-    insecure: <%= ENV["TEMPO_STORAGE_S3_INSECURE"] == "true" %>
-<% end %>
+    <% end %>
+    insecure: <%= ENV["TEMPO_STORAGE_S3_INSECURE"]&.downcase == "true" || false %>
+  <% end %>
 
 # Configuration des métriques (optionnel)
 metrics_generator:

@@ -30,21 +30,28 @@ end
 
 # Configuration du stockage
 def storage_config
-  config = {}
+  debug("Début de la configuration du stockage")
+  
+  # Initialiser la structure de configuration complète
+  config = {
+    "trace" => {},
+    "wal" => {},
+    "local" => nil,
+    "s3" => nil
+  }
   
   # Backend de stockage
-  backend = get_env("TEMPO_STORAGE_BACKEND", "local")
-  config["trace"] = {
-    "backend" => backend
-  }
+  backend = get_env("TEMPO_STORAGE_BACKEND", "local").to_s.downcase
+  debug("Backend de stockage: #{backend}")
+  
+  config["trace"]["backend"] = backend
   
   # Configuration WAL
-  config["wal"] = {
-    "path" => get_env("TEMPO_STORAGE_WAL_PATH", "/tmp/tempo/wal")
-  }
+  config["wal"]["path"] = get_env("TEMPO_STORAGE_WAL_PATH", "/tmp/tempo/wal")
   
   # Configuration locale
   if backend == "local"
+    debug("Configuration du stockage local")
     config["local"] = {
       "path" => get_env("TEMPO_STORAGE_LOCAL_PATH", "/tmp/tempo/blocks")
     }
@@ -52,21 +59,29 @@ def storage_config
   
   # Configuration S3 (si nécessaire)
   if backend == "s3"
+    debug("Configuration du stockage S3")
+    s3_bucket = get_env("TEMPO_STORAGE_S3_BUCKET")
+    
+    if s3_bucket.nil? || s3_bucket.empty?
+      raise "TEMPO_STORAGE_S3_BUCKET doit être défini pour utiliser le backend S3"
+    end
+    
     config["s3"] = {
-      "bucket" => get_env("TEMPO_STORAGE_S3_BUCKET"),
+      "bucket" => s3_bucket,
       "endpoint" => get_env("TEMPO_STORAGE_S3_ENDPOINT"),
       "access_key" => get_env("TEMPO_STORAGE_S3_ACCESS_KEY_ID"),
       "secret_key" => get_env("TEMPO_STORAGE_S3_SECRET_ACCESS_KEY"),
-      "insecure" => get_env("TEMPO_STORAGE_S3_INSECURE", "false") == "true"
+      "insecure" => get_env("TEMPO_STORAGE_S3_INSECURE", "false").to_s.downcase == "true"
     }
-    
-    # Vérifier les paramètres S3 obligatoires
-    if config["s3"]["bucket"].nil? || config["s3"]["bucket"].empty?
-      raise "TEMPO_STORAGE_S3_BUCKET doit être défini pour utiliser le backend S3"
-    end
   end
   
-  debug("Configuration du stockage: #{config.inspect}")
+  debug("Configuration du stockage générée: #{config.inspect}")
+  
+  # Valider la structure de configuration
+  if config["trace"].nil? || config["trace"]["backend"].nil?
+    raise "Configuration de stockage invalide: section 'trace' manquante ou incomplète"
+  end
+  
   config
 end
 
