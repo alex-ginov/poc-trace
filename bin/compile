@@ -42,7 +42,8 @@ install_tempo() {
 
   echo -n "Extraction de l'archive Tempo..."
   tar xzf ${CACHE_DIR}/${tempo_archive} --directory=$BUILD_DIR
-  mv ${BUILD_DIR}/${tempo_dist} ${BUILD_DIR}/tempo
+  mkdir -p "${BUILD_DIR}/tempo"
+  mv "${BUILD_DIR}/${tempo_dist}" "${BUILD_DIR}/tempo/tempo"
   echo " fait"
 
   echo -n "Copie des scripts du buildpack..."

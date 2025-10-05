@@ -1,0 +1,1 @@
+web: tempo --config.file=tempo.yaml
