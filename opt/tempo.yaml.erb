@@ -31,12 +31,12 @@ storage:
     backend: <%= storage_config["trace_by_id"]["backend"] %>
   wal:
     path: <%= storage_config["wal"]["path"] %>
-  s3:
-    bucket: <%= storage_config["s3"]["bucket"] %>
-    endpoint: <%= storage_config["s3"]["endpoint"] %>
-    access_key_id: <%= ENV["TEMPO_STORAGE_S3_ACCESS_KEY_ID"] %>
-    secret_access_key: <%= ENV["TEMPO_STORAGE_S3_SECRET_ACCESS_KEY"] %>
-    insecure: <%= ENV["TEMPO_STORAGE_S3_INSECURE"] == "true" %>
+  #s3:
+   # bucket: <%= storage_config["s3"]["bucket"] %>
+   # endpoint: <%= storage_config["s3"]["endpoint"] %>
+   # access_key_id: <%= ENV["TEMPO_STORAGE_S3_ACCESS_KEY_ID"] %>
+   # secret_access_key: <%= ENV["TEMPO_STORAGE_S3_SECRET_ACCESS_KEY"] %>
+   # insecure: <%= ENV["TEMPO_STORAGE_S3_INSECURE"] == "true" %>
 
 # Configuration des limites (optionnel)
 # overrides:
