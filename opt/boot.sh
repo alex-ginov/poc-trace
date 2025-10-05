@@ -10,7 +10,7 @@ echo "=====> Démarrage de Grafana Tempo"
 
 # Chemins mis à jour pour correspondre à la structure de déploiement Scalingo
 TEMPO_BIN="/app/tempo"
-TEMPO_CONFIG_FILE="/app/tempo.yaml"
+TEMPO_CONFIG_FILE="/app/etc/tempo.yaml"
 
 # Vérifier que l'exécutable existe
 if [ ! -f "$TEMPO_BIN" ]; then
