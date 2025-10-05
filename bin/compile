@@ -24,7 +24,8 @@ install_tempo() {
   local CACHE_DIR="${2}"
 
   tempo_dist="tempo-linux-amd64"
-  tempo_archive="tempo-${TEMPO_VERSION}.linux-amd64.tar.gz"
+  tempo_archive="tempo_${TEMPO_VERSION}_linux_amd64.tar.gz"
+  # URL corrigée avec -L pour suivre les redirections
   tempo_url="https://github.com/grafana/tempo/releases/download/v${TEMPO_VERSION}/${tempo_archive}"
 
   if [[ -f "$CACHE_DIR/.TEMPO_VERSION" ]]; then
@@ -37,13 +38,24 @@ install_tempo() {
 
   if [[ ! -f "$CACHE_DIR/${tempo_archive}" ]]; then
     echo "-----> Téléchargement de Tempo ${TEMPO_VERSION}..."
-    curl -L --retry 3 --retry-delay 2 -o ${CACHE_DIR}/${tempo_archive} "${tempo_url}"
+    echo "       URL: ${tempo_url}"
     
-    if [ ! -f "${CACHE_DIR}/${tempo_archive}" ]; then
-      echo "ERREUR: Échec du téléchargement"
+    # Utiliser -L pour suivre les redirections, --fail pour échouer proprement
+    curl -L --fail --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 300 \
+      -o ${CACHE_DIR}/${tempo_archive} "${tempo_url}"
+    
+    # Vérifier la taille du fichier téléchargé
+    file_size=$(stat -f%z "${CACHE_DIR}/${tempo_archive}" 2>/dev/null || stat -c%s "${CACHE_DIR}/${tempo_archive}" 2>/dev/null || echo "0")
+    
+    if [ "$file_size" -lt 1000 ]; then
+      echo "ERREUR: Fichier téléchargé trop petit (${file_size} bytes)"
+      echo "Contenu du fichier:"
+      cat ${CACHE_DIR}/${tempo_archive}
+      rm -f ${CACHE_DIR}/${tempo_archive}
       exit 1
     fi
     
+    echo "       Téléchargé: ${file_size} bytes"
     echo $TEMPO_VERSION > ${CACHE_DIR}/.TEMPO_VERSION
     echo "       Téléchargement terminé"
   else
@@ -51,27 +63,46 @@ install_tempo() {
   fi
 
   echo "-----> Extraction de Tempo..."
+  
+  # Vérifier le contenu de l'archive
+  echo "       Contenu de l'archive:"
+  tar tzf ${CACHE_DIR}/${tempo_archive} | head -5
+  
   mkdir -p "${BUILD_DIR}/tempo"
   
   # Extraire directement dans BUILD_DIR
   tar xzf ${CACHE_DIR}/${tempo_archive} -C ${BUILD_DIR}
   
-  # Chercher l'exécutable dans différents endroits possibles
+  # Chercher l'exécutable
+  echo "       Recherche de l'exécutable..."
   if [ -f "${BUILD_DIR}/${tempo_dist}" ]; then
-    echo "       Exécutable trouvé à la racine"
+    echo "       Trouvé à la racine"
     mv "${BUILD_DIR}/${tempo_dist}" "${BUILD_DIR}/tempo/tempo"
   elif [ -f "${BUILD_DIR}/tempo-${TEMPO_VERSION}/${tempo_dist}" ]; then
-    echo "       Exécutable trouvé dans le sous-dossier"
+    echo "       Trouvé dans sous-dossier version"
     mv "${BUILD_DIR}/tempo-${TEMPO_VERSION}/${tempo_dist}" "${BUILD_DIR}/tempo/tempo"
     rm -rf "${BUILD_DIR}/tempo-${TEMPO_VERSION}"
+  elif [ -f "${BUILD_DIR}/tempo" ]; then
+    echo "       Trouvé comme 'tempo'"
+    mv "${BUILD_DIR}/tempo" "${BUILD_DIR}/tempo/tempo"
   else
     echo "ERREUR: Exécutable non trouvé"
     echo "Contenu de BUILD_DIR:"
-    ls -la ${BUILD_DIR}/
+    find ${BUILD_DIR} -maxdepth 2 -type f
     exit 1
   fi
   
   chmod +x "${BUILD_DIR}/tempo/tempo"
+  
+  # Vérifier que c'est bien un binaire
+  if file "${BUILD_DIR}/tempo/tempo" | grep -q "ELF"; then
+    echo "       ✓ Binaire valide"
+  else
+    echo "ERREUR: Le fichier n'est pas un binaire valide"
+    file "${BUILD_DIR}/tempo/tempo"
+    exit 1
+  fi
+  
   echo "       Extraction terminée"
 }
 
@@ -112,4 +143,4 @@ echo "       Configuration créée"
 
 rm -f ${BUILD_DIR}/gen_tempo_conf.rb ${BUILD_DIR}/tempo.yaml.erb
 
-echo "-----> Buildpack Tempo installé!"
+echo "-----> ✓ Buildpack Tempo installé avec succès!"
