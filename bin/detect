@@ -1,9 +1,7 @@
 #!/bin/bash
-# bin/detect
 
-if [ -f "$1/tempo.yaml" ] || [ -n "$TEMPO_CONFIG_YAML" ]; then
-  echo "Tempo"
-  exit 0
-else
-  exit 1
-fi
+# Ce script détecte si l'application doit utiliser ce buildpack
+# Pour Tempo, on accepte toujours (buildpack explicite)
+
+echo "tempo"
+exit 0
