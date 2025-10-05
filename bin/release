@@ -1,14 +1,17 @@
 #!/bin/bash
 
-cat <<YAML
+# Afficher la configuration de sortie pour le buildpack
+cat << 'YAML'
 ---
 default_process_types:
   web: /app/boot.sh
 YAML
-EOF
 
-echo "=====> Création de lib/common.sh"
-cat > lib/common.sh << 'EOF'
+# Créer le répertoire lib s'il n'existe pas
+mkdir -p lib
+
+# Créer le fichier common.sh avec les fonctions utilitaires
+cat > lib/common.sh << 'COMMON_EOF'
 #!/bin/bash
 
 # Fonction pour indenter les sorties
@@ -34,3 +37,4 @@ export_env_dir() {
     done
   fi
 }
+COMMON_EOF
