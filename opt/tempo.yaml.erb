@@ -1,16 +1,22 @@
-# Configuration minimale pour Tempo
+# ================================================
+# Configuration Grafana Tempo pour Scalingo
+# ================================================
+
 server:
-  http_listen_port: 3000
-  grpc_listen_port: 9095
+  # Scalingo ne permet d'exposer qu'un seul port externe : $PORT
+  http_listen_port: <%= ENV["PORT"] || 8080 %>
+  grpc_listen_port: <%= ENV["PORT"] || 8080 %>
 
 distributor:
   receivers:
     otlp:
       protocols:
         grpc:
-          endpoint: "0.0.0.0:4317"
+          # OTLP gRPC sur le port exposé
+          endpoint: "0.0.0.0:<%= ENV["PORT"] || 8080 %>"
         http:
-          endpoint: "0.0.0.0:4318"
+          # OTLP HTTP sur le même port (utilisé par Node.js)
+          endpoint: "0.0.0.0:<%= ENV["PORT"] || 8080 %>"
 
 ingester:
   max_block_duration: 1h
