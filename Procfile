@@ -1,1 +1,0 @@
-web: /app/tempo/tempo --config.file=/app/tempo/etc/tempo.yaml --server.http-listen-port=$PORT
