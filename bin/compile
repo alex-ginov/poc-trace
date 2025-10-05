@@ -45,22 +45,52 @@ install_tempo() {
   # Télécharger Tempo si nécessaire
   if [[ ! -f "$CACHE_DIR/${tempo_archive}" ]]; then
     echo "-----> Téléchargement de Tempo ${TEMPO_VERSION}..."
-    if ! curl -L --retry 3 --retry-delay 2 -o ${CACHE_DIR}/${tempo_archive} "${tempo_url}" 2>/dev/null; then
-      echo "ERREUR: Échec du téléchargement de Tempo"
+    echo "       URL: ${tempo_url}"
+    
+    # Télécharger avec affichage de la progression
+    if ! curl -L --progress-bar --fail --retry 3 --retry-delay 2 -o ${CACHE_DIR}/${tempo_archive} "${tempo_url}"; then
+      echo "ERREUR: Échec du téléchargement de Tempo depuis ${tempo_url}"
+      echo "       Vérifiez que la version ${TEMPO_VERSION} existe sur GitHub"
+      exit 1
+    fi
+    
+    # Vérifier que le fichier a bien été téléchargé
+    if [ ! -f "${CACHE_DIR}/${tempo_archive}" ]; then
+      echo "ERREUR: Le fichier ${tempo_archive} n'a pas été téléchargé correctement"
+      exit 1
+    fi
+    
+    # Vérifier la taille du fichier (au moins 1MB)
+    FILESIZE=$(stat -c%s "${CACHE_DIR}/${tempo_archive}" 2>/dev/null || stat -f%z "${CACHE_DIR}/${tempo_archive}" 2>/dev/null)
+    if [ "$FILESIZE" -lt 1000000 ]; then
+      echo "ERREUR: Le fichier téléchargé est trop petit (${FILESIZE} octets), il est probablement corrompu"
+      echo "Contenu du fichier :"
+      head -n 10 "${CACHE_DIR}/${tempo_archive}"
       exit 1
     fi
     
     echo $TEMPO_VERSION > ${CACHE_DIR}/.TEMPO_VERSION
-    echo "       Téléchargement terminé"
+    echo "       Téléchargement terminé (${FILESIZE} octets)"
   else
     echo "-----> Utilisation de Tempo ${TEMPO_VERSION} depuis le cache"
   fi
 
+  # Créer le répertoire de destination
+  mkdir -p "${BUILD_DIR}/tempo"
+  
+  # Vérifier l'archive avant extraction
+  echo "-----> Vérification de l'archive..."
+  if ! tar tzf "${CACHE_DIR}/${tempo_archive}" >/dev/null 2>&1; then
+    echo "ERREUR: L'archive est corrompue ou au mauvais format"
+    echo "        Type de fichier : $(file "${CACHE_DIR}/${tempo_archive}")"
+    exit 1
+  fi
+
   # Extraire l'archive
   echo "-----> Extraction de Tempo..."
-  mkdir -p "${BUILD_DIR}/tempo"
-  if ! tar xzf ${CACHE_DIR}/${tempo_archive} -C ${BUILD_DIR}/tempo 2>/dev/null; then
+  if ! tar xvzf "${CACHE_DIR}/${tempo_archive}" -C "${BUILD_DIR}/tempo"; then
     echo "ERREUR: Échec de l'extraction de l'archive"
+    echo "        Vérifiez les permissions et l'espace disque disponible"
     exit 1
   fi
   
