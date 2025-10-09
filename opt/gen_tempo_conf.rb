@@ -1,66 +1,37 @@
 #!/usr/bin/env ruby
-# ============================================================
-# Génération statique d'une configuration Grafana Tempo
-# Compatible Scalingo (écoute sur le port $PORT pour HTTP, 9095 pour gRPC)
-# ============================================================
 
-begin
-  # Récupère le port exposé par Scalingo, sinon 8080 par défaut
-  port = ENV["PORT"] || "8080"
+require "erb"
+require "yaml"
+require "json"
 
-  config = <<~YAML
-  # ================================================
-  # Configuration Grafana Tempo pour Scalingo
-  # ================================================
-  server:
-    http_listen_port: #{port}
-    grpc_listen_port: 9095
-
-  distributor:
-    receivers:
-      otlp:
-        protocols:
-          grpc:
-            endpoint: "0.0.0.0:9095"
-          http:
-            endpoint: "0.0.0.0:#{port}"
-
-  ingester:
-    max_block_duration: 1h
-    max_block_bytes: 104857600
-    complete_block_timeout: 5m
-
-  compactor:
-    compaction:
-      block_retention: 48h
-
-  storage:
-    trace:
-      backend: local
-    wal:
-      path: /tmp/tempo/wal
-    local:
-      path: /tmp/tempo/blocks
-
-  # Désactiver l'authentification pour simplifier
-  auth:
-    enabled: false
-
-  # Désactiver les métriques Prometheus intégrées
-  # car elles entrent en conflit avec l'agent
-  metrics_generator:
-    storage:
-      path: /tmp/tempo/metrics
-  YAML
-
-  # Afficher la configuration générée
-  puts config
-
-rescue => e
-  STDERR.puts "ERREUR lors de la génération de la configuration: #{e.message}"
-  STDERR.puts e.backtrace.join("\n")
-  exit 1
+# Helper function to get environment variables safely
+def get_env(key, default = nil)
+  ENV[key] || default
 end
 
-# Toujours terminer avec succès
-exit 0
+# Example of how to expose environment variables to the ERB template
+# You can add more helper methods here for specific Tempo configuration sections
+
+def storage_config
+  config = {}
+  config["trace_by_id"] = { "backend": get_env("TEMPO_STORAGE_TRACE_BY_ID_BACKEND", "s3") } if get_env("TEMPO_STORAGE_TRACE_BY_ID_BACKEND")
+  config["wal"] = { "path": get_env("TEMPO_STORAGE_WAL_PATH", "/tmp/tempo/wal") } if get_env("TEMPO_STORAGE_WAL_PATH")
+  config["s3"] = { "bucket": get_env("TEMPO_STORAGE_S3_BUCKET"), "endpoint": get_env("TEMPO_STORAGE_S3_ENDPOINT") } if get_env("TEMPO_STORAGE_S3_BUCKET")
+  config
+end
+
+def server_config
+  config = {}
+  config["http_listen_port"] = get_env("TEMPO_HTTP_LISTEN_PORT", "3200").to_i
+  config["grpc_listen_port"] = get_env("TEMPO_GRPC_LISTEN_PORT", "9095").to_i
+  config
+end
+
+# Load the template
+# BUILDPACK_DIR est exporté par le script compile
+content = File.read "#{ENV["BUILDPACK_DIR"]}/tempo.yaml.erb"
+erb_template = ERB.new(content, nil, "-")
+
+# Output the generated YAML
+puts erb_template.result(binding)
+

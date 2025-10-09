@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Afficher la configuration de sortie pour le buildpack
-cat << 'YAML'
----
-default_process_types:
+cat <<EOF
+--- 
+processes:
   web: /app/boot.sh
-YAML
+EOF
+
