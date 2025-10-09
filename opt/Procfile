@@ -1,0 +1,1 @@
+web: bash -c "chmod +x opt/gen_tempo_conf.rb && TEMPO_CONFIG=$(pwd)/tempo.yaml ./opt/gen_tempo_conf.rb > tempo.yaml && TEMPO_HOME=$(pwd) ./bin/tempo --config.file=./tempo.yaml"
