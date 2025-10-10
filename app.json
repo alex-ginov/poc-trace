@@ -1,0 +1,18 @@
+{
+  "name": "poc-trace",
+  "description": "Déploiement de Tempo sur Scalingo",
+  "buildpacks": [
+    {
+      "url": "."
+    }
+  ],
+  "scripts": {
+    "postdeploy": "echo 'Post-deploy script executed'"
+  },
+  "env": {
+    "BUILDPACK_URL": {
+      "description": "URL du buildpack personnalisé",
+      "value": "."
+    }
+  }
+}

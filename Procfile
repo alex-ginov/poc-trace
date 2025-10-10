@@ -1,1 +1,1 @@
-web: ./opt/boot.sh
+web: /app/opt/boot.sh
