@@ -1,0 +1,1 @@
+web: ./opt/boot.sh
