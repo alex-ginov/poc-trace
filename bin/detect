@@ -9,4 +9,3 @@ if [ -f "${1}/tempo.yaml" ] || [ -n "$TEMPO_CONFIG_YAML" ]; then
 else
   exit 1
 fi
-

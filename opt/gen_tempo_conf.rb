@@ -34,4 +34,3 @@ erb_template = ERB.new(content, nil, "-")
 
 # Output the generated YAML
 puts erb_template.result(binding)
-

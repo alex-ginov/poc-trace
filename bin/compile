@@ -77,4 +77,3 @@ fi
 
 # Nettoyage des fichiers temporaires ou non nécessaires
 rm -f ${BUILD_DIR}/gen_tempo_conf.rb ${BUILD_DIR}/tempo.yaml.erb
-
